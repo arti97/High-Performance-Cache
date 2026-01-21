@@ -1,11 +1,12 @@
 package org.naiara;
 
-import org.naiara.cacheconfig.CacheConfig;
-import org.naiara.cacheconfig.CacheLoader;
+import org.naiara.cache.CacheConfig;
+import org.naiara.cache.CacheLoader;
+import org.naiara.cache.CacheNode;
+import org.naiara.cache.ExpiryStrategy;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -65,6 +66,7 @@ public class HighPerformanceCache {
         logger.log(Level.INFO, "Cache miss; Adding new node to cache & list");
         cacheMap.put(key, new CacheNode(key, value));
         orderedCacheList.addFirst(key);
+        logger.log(Level.INFO, "LIST FIRST POINTER AT: " + orderedCacheList.getFirst());
         return null;
     }
 
@@ -85,6 +87,7 @@ public class HighPerformanceCache {
     public int size(){
         int size = cacheMap.size();
         logger.log(Level.INFO, "SIZE check: "+ size);
+        logger.log(Level.INFO, orderedCacheList.toString());
         return size;
     }
 
@@ -110,6 +113,7 @@ public class HighPerformanceCache {
                 return value;
             }
         }
+        logger.log(Level.INFO, "Store is null!");
         return null;
     }
 
@@ -120,11 +124,11 @@ public class HighPerformanceCache {
     private void updateOrderedCacheList(String key){
         orderedCacheList.remove(key);
         orderedCacheList.addFirst(key);
-        logger.log(Level.INFO, key +" updated to DLL's first pointer");
+        logger.log(Level.INFO, "LIST FIRST POINTER AT: " + orderedCacheList.getFirst());
     }
 
     private void evictLru(){
-        logger.log(Level.INFO, "Cache Full, evicting LRU ");
+        logger.log(Level.INFO, "-----------CACHE FULL!, evicting LRU-----------");
         String leastUsedKey = orderedCacheList.removeLast();
         cacheMap.remove(leastUsedKey);
     }
@@ -138,8 +142,21 @@ public class HighPerformanceCache {
     }
 
     private void updateBasedOnLatestAccess(CacheNode cacheNode){
-        logger.log(Level.INFO, "Updating last accessed time");
         cacheNode.setLastAccessedTime(System.currentTimeMillis());
         updateOrderedCacheList(cacheNode.getKey());
+    }
+
+    public void runExpirationStrategy(){
+        System.out.println("--------- TRIGGERING EXPIRY -----------");
+        ExpiryStrategy expiryStrategy = config.getExpiryStrategy();
+        long ttl = config.getTtl();
+        System.out.println("--------- STRATEGY: " + expiryStrategy + " TTL: " + ttl + "-----------");
+        for(CacheNode eachNode: cacheMap.values()){
+            if(eachNode.isExpired(expiryStrategy, ttl)){
+                System.out.println("Removing: "+ eachNode.getKey());
+                cacheMap.remove(eachNode.getKey());
+                orderedCacheList.remove(eachNode.getKey());
+            }
+        }
     }
 }

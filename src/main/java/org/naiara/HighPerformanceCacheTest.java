@@ -1,7 +1,7 @@
 package org.naiara;
 
-import org.naiara.cacheconfig.CacheConfig;
-import org.naiara.cacheconfig.CacheLoader;
+import org.naiara.cache.CacheConfig;
+import org.naiara.cache.CacheLoader;
 
 import static org.naiara.utils.Constants.*;
 import static org.naiara.utils.TestUtils.passTest;

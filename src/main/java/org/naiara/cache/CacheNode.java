@@ -1,4 +1,4 @@
-package org.naiara;
+package org.naiara.cache;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -47,5 +47,9 @@ public class CacheNode {
 
     public void setLastAccessedTime(long lastAccessedTime) {
         this.lastAccessedTime = lastAccessedTime;
+    }
+
+    public boolean isExpired(ExpiryStrategy expiryStrategy, long ttl){
+        return expiryStrategy.isExpired(this, ttl);
     }
 }

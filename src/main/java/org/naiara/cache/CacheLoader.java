@@ -1,4 +1,4 @@
-package org.naiara.cacheconfig;
+package org.naiara.cache;
 
 public interface CacheLoader {
 
