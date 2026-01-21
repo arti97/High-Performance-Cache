@@ -1,6 +1,7 @@
 package org.naiara;
 
 import org.naiara.cacheconfig.CacheConfig;
+import org.naiara.cacheconfig.CacheLoader;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,11 +15,13 @@ public class HighPerformanceCache {
     private final CacheConfig config;
     private final Map<String, String> cacheMap;
     private final Deque<String> orderedCacheList;
+    private final CacheLoader cacheLoader;
 
-    public HighPerformanceCache(CacheConfig config) {
+    public HighPerformanceCache(CacheConfig config, CacheLoader cacheLoader) {
         this.config = config != null ? config : new CacheConfig(DEAFULT_CACHE_SIZE);
         this.cacheMap = new ConcurrentHashMap<>();
         this.orderedCacheList = new ConcurrentLinkedDeque<>();
+        this.cacheLoader = cacheLoader;
     }
 
     /*
@@ -30,10 +33,7 @@ public class HighPerformanceCache {
     public String get(String key) {
         checkForNullValue(key);
         if (!cacheMap.containsKey(key)) {
-            // If the key is not present in the cache, retrieve it from a backing store, add it to the cache, and return it??
-            // If the value is not found in the backing store, return null??
-            // TODO: Clarify Backing Store
-            return null;
+            return fetchFromStore(key);
         }
         orderedCacheList.remove(key);
         orderedCacheList.addFirst(key);
@@ -49,17 +49,9 @@ public class HighPerformanceCache {
     public void put(String key, String value) {
         checkForNullValue(key);
         checkForNullValue(value);
-        if (cacheMap.containsKey(key)) {
-            cacheMap.put(key, value);
-            orderedCacheList.remove(key);
-        } else {
-            if (cacheMap.size() >= config.getCapacity()) {
-                String leastUsedKey = orderedCacheList.removeLast();
-                cacheMap.remove(leastUsedKey);
-            }
-            cacheMap.put(key, value);
-        }
-        orderedCacheList.addFirst(key);
+        if (isCacheFull()) evictLru();
+        cacheMap.put(key, value);
+        updateOrderedCacheList(key);
     }
 
     /*
@@ -78,6 +70,31 @@ public class HighPerformanceCache {
         if (elememt == null) {
             throw new IllegalArgumentException(NULL_INPUT_EXCEPTION);
         }
+    }
+
+    private String fetchFromStore(String key){
+        if (cacheLoader != null) {
+            String value = cacheLoader.load(key);
+            if (value != null) {
+                put(key, value);
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private boolean isCacheFull(){
+        return cacheMap.size() >= config.getCapacity();
+    }
+
+    private void updateOrderedCacheList(String key){
+        orderedCacheList.remove(key);
+        orderedCacheList.addFirst(key);
+    }
+
+    private void evictLru(){
+        String leastUsedKey = orderedCacheList.removeLast();
+        cacheMap.remove(leastUsedKey);
     }
 
     public int size(){
