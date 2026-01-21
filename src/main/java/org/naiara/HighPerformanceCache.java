@@ -1,31 +1,34 @@
 package org.naiara;
 
 import org.naiara.cache.CacheConfig;
-import org.naiara.cache.CacheLoader;
 import org.naiara.cache.CacheNode;
 import org.naiara.cache.ExpiryStrategy;
+import org.naiara.store.Store;
+import org.naiara.store.StoreNode;
 
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static org.naiara.utils.Constants.DEAFULT_CACHE_SIZE;
 import static org.naiara.utils.Constants.NULL_INPUT_EXCEPTION;
+import static org.naiara.utils.TestUtils.triggerSleep;
 
 public class HighPerformanceCache {
 
     private final CacheConfig config;
-    private final Map<String, CacheNode> cacheMap;
+    private Map<String, CacheNode> cacheMap;
     private final Deque<String> orderedCacheList;
-    private final CacheLoader cacheLoader;
+    private final Store storeLoader;
     private static final Logger logger = Logger.getLogger(HighPerformanceCache.class.getName());
 
-    public HighPerformanceCache(CacheConfig config, CacheLoader cacheLoader) {
+    public HighPerformanceCache(CacheConfig config, Store storeLoader) {
         this.config = config != null ? config : new CacheConfig(DEAFULT_CACHE_SIZE);
         this.cacheMap = new ConcurrentHashMap<>();
         this.orderedCacheList = new ConcurrentLinkedDeque<>();
-        this.cacheLoader = cacheLoader;
+        this.storeLoader = storeLoader;
     }
 
     /*
@@ -54,20 +57,24 @@ public class HighPerformanceCache {
         checkForNullValue(value);
         logger.log(Level.INFO, "PUT operation for key: " + key + " value: " + value);
         if(isCacheFull()) evictLru();
+        String previousValue = null;
         if(cacheHit(key)){
             logger.log(Level.INFO, "Cache Hit for key: " + key);
             CacheNode existingNode = cacheMap.get(key);
-            String previousValue = existingNode.getValue();
+            previousValue = existingNode.getValue();
             existingNode.setValue(value);
+            existingNode.setCacheVersion(existingNode.getCacheVersion()+1);
             logger.log(Level.INFO, "Updating previous value: " + previousValue+ " to: " + value);
             updateBasedOnLatestAccess(existingNode);
             return previousValue;
+        } else {
+            logger.log(Level.INFO, "Cache miss; Adding new node to cache & list");
+            cacheMap.put(key, new CacheNode(key, value));
+            orderedCacheList.addFirst(key);
+            logger.log(Level.INFO, "LIST FIRST POINTER AT: " + orderedCacheList.getFirst());
         }
-        logger.log(Level.INFO, "Cache miss; Adding new node to cache & list");
-        cacheMap.put(key, new CacheNode(key, value));
-        orderedCacheList.addFirst(key);
-        logger.log(Level.INFO, "LIST FIRST POINTER AT: " + orderedCacheList.getFirst());
-        return null;
+        processWriteAsync();
+        return previousValue;
     }
 
     /*
@@ -104,9 +111,9 @@ public class HighPerformanceCache {
     }
 
     private String fetchFromStore(String key){
-        if (cacheLoader != null) {
+        if (storeLoader != null) {
             logger.log(Level.INFO, "Fetching from store for key: " + key);
-            String value = cacheLoader.load(key);
+            String value = storeLoader.load(key);
             if (value != null) {
                 logger.log(Level.INFO, "Found in store for key: " + key + " value:" + value);
                 put(key, value);
@@ -158,5 +165,32 @@ public class HighPerformanceCache {
                 orderedCacheList.remove(eachNode.getKey());
             }
         }
+
+        //TODO: Discuss load factor based expiry
+    }
+
+    private void processWriteAsync(){
+        // TODO:
+    }
+
+    public void loadFromStore(){
+        System.out.println("--------- STARTING LOAD FROM STORE -----------");
+        // TODO: how do you select if store size > cache capacity?
+        if(storeLoader != null && !storeLoader.getStoreData().isEmpty()){
+            Map<String, StoreNode> storeData = storeLoader.getStoreData();
+
+            //randomizing for now
+            for(int i = 0; i < 9; i++){
+                int idx = new Random().nextInt(16);
+                System.out.println("LOADING " + idx);
+                storeData.get("KEY"+idx);
+            }
+            orderedCacheList.addAll(this.cacheMap.keySet());
+        }
+        System.out.println("--------- LOADED " + orderedCacheList.size() + " ITEMS FROM STORE -----------");
+    }
+
+    public void refreshFromStore(){
+        //TODO: Discuss
     }
 }

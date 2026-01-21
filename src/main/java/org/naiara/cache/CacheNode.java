@@ -8,12 +8,15 @@ public class CacheNode {
     String value;
     long createdTime;
     long lastAccessedTime;
+    int cacheVersion;
     private static final Logger logger = Logger.getLogger(CacheNode.class.getName());
 
     public CacheNode(String key, String value) {
         this.key = key;
         this.value = value;
         this.createdTime = System.currentTimeMillis();
+        this.lastAccessedTime = this.createdTime;
+        this.cacheVersion = 0;
         logger.log(Level.INFO, "Creating new cache node for key: " + key + " value: " + value);
     }
 
@@ -51,5 +54,13 @@ public class CacheNode {
 
     public boolean isExpired(ExpiryStrategy expiryStrategy, long ttl){
         return expiryStrategy.isExpired(this, ttl);
+    }
+
+    public int getCacheVersion() {
+        return cacheVersion;
+    }
+
+    public void setCacheVersion(int cacheVersion) {
+        this.cacheVersion = cacheVersion;
     }
 }

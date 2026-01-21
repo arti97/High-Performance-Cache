@@ -1,7 +1,10 @@
 package org.naiara;
 
 import org.naiara.cache.CacheConfig;
-import org.naiara.cache.CacheLoader;
+import org.naiara.store.DummyStore;
+import org.naiara.store.Store;
+import org.naiara.store.StoreNode;
+import java.util.Map;
 
 import static org.naiara.utils.Constants.*;
 import static org.naiara.utils.TestUtils.passTest;
@@ -124,10 +127,7 @@ public class HighPerformanceCacheTest {
 
     // Extra tests, not in provided PDF
     private static void testLoadFromStoreOnCacheMiss() {
-        CacheLoader cacheLoaderTest = key -> {
-            if (key.equals(BACKEND_KEY)) return BACKEND_VALUE;
-            return null;
-        };
+        Store cacheLoaderTest = new DummyStore(Map.of(BACKEND_KEY, new StoreNode(BACKEND_KEY, BACKEND_VALUE)));
         HighPerformanceCache hpcTest6 = new HighPerformanceCache(cacheConfigTest, cacheLoaderTest);
         String hpcTest6Result = hpcTest6.get(BACKEND_KEY);
         assert hpcTest6Result != null && hpcTest6Result.equals(BACKEND_VALUE) : "Should load from backing store";
