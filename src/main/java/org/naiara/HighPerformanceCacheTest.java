@@ -1,6 +1,7 @@
 package org.naiara;
 
 import org.naiara.cacheconfig.CacheConfig;
+import org.naiara.cacheconfig.CacheLoader;
 
 import static org.naiara.utils.Constants.*;
 import static org.naiara.utils.TestUtils.passTest;
@@ -18,6 +19,24 @@ public class HighPerformanceCacheTest {
         testUpdateExistingKey();
         testRemoveKey();
         testCapacityAndEvictionPolicy();
+
+        //extra tests
+        testLoadFromStoreOnCacheMiss();
+
+        /*
+        TODO: Tests
+
+        Order test:
+        { add some keys,
+        access first-inserted to make it at first-pointer
+        add more keys to evict 2nd added/3rd addded}
+
+        Edge cases:
+         - null key
+         - null value
+         - ops on empty cache
+         - clear cache
+         */
     }
 
     private static void testAddAndRetrieve(){
@@ -76,7 +95,7 @@ public class HighPerformanceCacheTest {
         hpcTest4.put(KEY1, VALUE1);
         String removed = hpcTest4.remove(KEY1);
         String test4Result = hpcTest4.get(KEY1);
-        assert removed.equals(VALUE1) : "Remove should return true";
+        assert removed.equals(VALUE1) : "Remove should return previous value (value1) got: " + removed;
         assert test4Result == null : "Expected null after removal";
         assert hpcTest4.size() == 0 : "Expected size 0, got " + hpcTest4.size();
         passTest();
@@ -96,11 +115,25 @@ public class HighPerformanceCacheTest {
         hpcTest5.put(KEY1, VALUE1);
         hpcTest5.put(KEY2, VALUE2);
         hpcTest5.put(KEY3, VALUE3);
-        String test5Result = hpcTest5.get(KEY1);
         assert hpcTest5.get(KEY1) == null : "key1 should be evicted";
         assert hpcTest5.get(KEY2) != null : "key2 should exist";
         assert hpcTest5.get(KEY3) != null : "key3 should exist";
         assert hpcTest5.size() == 2 : "Expected size 2, got " + hpcTest5.size();
+        passTest();
+    }
+
+    // Extra tests, not in provided PDF
+    private static void testLoadFromStoreOnCacheMiss() {
+        CacheLoader cacheLoaderTest = key -> {
+            if (key.equals(BACKEND_KEY)) return BACKEND_VALUE;
+            return null;
+        };
+        HighPerformanceCache hpcTest6 = new HighPerformanceCache(cacheConfigTest, cacheLoaderTest);
+        String hpcTest6Result = hpcTest6.get(BACKEND_KEY);
+        assert hpcTest6Result != null && hpcTest6Result.equals(BACKEND_VALUE) : "Should load from backing store";
+        hpcTest6.put(BACKEND_KEY, VALUE3);
+        hpcTest6Result = hpcTest6.get(BACKEND_KEY);
+        assert hpcTest6Result != null && hpcTest6Result.equals(VALUE3) : "Should retrieve updated value from cache: " + VALUE3 + ", instead got previous backend value "+ hpcTest6Result;
         passTest();
     }
 }

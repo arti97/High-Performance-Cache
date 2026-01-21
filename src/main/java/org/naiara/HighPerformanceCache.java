@@ -6,6 +6,8 @@ import org.naiara.cacheconfig.CacheLoader;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static org.naiara.utils.Constants.DEAFULT_CACHE_SIZE;
 import static org.naiara.utils.Constants.NULL_INPUT_EXCEPTION;
@@ -13,9 +15,10 @@ import static org.naiara.utils.Constants.NULL_INPUT_EXCEPTION;
 public class HighPerformanceCache {
 
     private final CacheConfig config;
-    private final Map<String, String> cacheMap;
+    private final Map<String, CacheNode> cacheMap;
     private final Deque<String> orderedCacheList;
     private final CacheLoader cacheLoader;
+    private static final Logger logger = Logger.getLogger(HighPerformanceCache.class.getName());
 
     public HighPerformanceCache(CacheConfig config, CacheLoader cacheLoader) {
         this.config = config != null ? config : new CacheConfig(DEAFULT_CACHE_SIZE);
@@ -32,11 +35,13 @@ public class HighPerformanceCache {
      */
     public String get(String key) {
         checkForNullValue(key);
-        if (!cacheMap.containsKey(key)) return fetchFromStore(key);
-        updateOrderedCacheList(key);
-        return cacheMap.get(key);
+        logger.log(Level.INFO, "GET operation for key: " + key);
+        if (cacheMiss(key)) return fetchFromStore(key);
+        logger.log(Level.INFO, "Cache Hit for key: " + key);
+        CacheNode cacheNode = cacheMap.get(key);
+        updateBasedOnLatestAccess(cacheNode);
+        return cacheNode.getValue();
     }
-
 
     /*
     put(key, value): Add a new key-value pair to the cache. If the
@@ -46,11 +51,21 @@ public class HighPerformanceCache {
     public String put(String key, String value) {
         checkForNullValue(key);
         checkForNullValue(value);
-        if (isCacheFull()) evictLru();
-        String previousValue = cacheMap.getOrDefault(key, null);
-        cacheMap.put(key, value);
-        updateOrderedCacheList(key);
-        return previousValue;
+        logger.log(Level.INFO, "PUT operation for key: " + key + " value: " + value);
+        if(isCacheFull()) evictLru();
+        if(cacheHit(key)){
+            logger.log(Level.INFO, "Cache Hit for key: " + key);
+            CacheNode existingNode = cacheMap.get(key);
+            String previousValue = existingNode.getValue();
+            existingNode.setValue(value);
+            logger.log(Level.INFO, "Updating previous value: " + previousValue+ " to: " + value);
+            updateBasedOnLatestAccess(existingNode);
+            return previousValue;
+        }
+        logger.log(Level.INFO, "Cache miss; Adding new node to cache & list");
+        cacheMap.put(key, new CacheNode(key, value));
+        orderedCacheList.addFirst(key);
+        return null;
     }
 
     /*
@@ -59,21 +74,38 @@ public class HighPerformanceCache {
      */
     public String remove(String key) {
         checkForNullValue(key);
-        if (!cacheMap.containsKey(key)) return null;
+        logger.log(Level.INFO, "REMOVE operation for key: " + key);
+        if (cacheMiss(key)) return null;
         orderedCacheList.remove(key);
-        return cacheMap.remove(key);
+        return cacheMap.remove(key).getValue();
     }
 
+    //TODO: Provide empty/clear cache functionality
+
+    public int size(){
+        int size = cacheMap.size();
+        logger.log(Level.INFO, "SIZE check: "+ size);
+        return size;
+    }
+
+
+
+    /* ------------------ ------------- ------------------ */
+    /* ------------------ PRIVATE UTILS ------------------ */
+    /* ------------------ ------------- ------------------ */
     private void checkForNullValue(String elememt){
         if (elememt == null) {
+            logger.log(Level.SEVERE, "Null value passed");
             throw new IllegalArgumentException(NULL_INPUT_EXCEPTION);
         }
     }
 
     private String fetchFromStore(String key){
         if (cacheLoader != null) {
+            logger.log(Level.INFO, "Fetching from store for key: " + key);
             String value = cacheLoader.load(key);
             if (value != null) {
+                logger.log(Level.INFO, "Found in store for key: " + key + " value:" + value);
                 put(key, value);
                 return value;
             }
@@ -88,14 +120,26 @@ public class HighPerformanceCache {
     private void updateOrderedCacheList(String key){
         orderedCacheList.remove(key);
         orderedCacheList.addFirst(key);
+        logger.log(Level.INFO, key +" updated to DLL's first pointer");
     }
 
     private void evictLru(){
+        logger.log(Level.INFO, "Cache Full, evicting LRU ");
         String leastUsedKey = orderedCacheList.removeLast();
         cacheMap.remove(leastUsedKey);
     }
 
-    public int size(){
-        return cacheMap.size();
+    private boolean cacheMiss(String key){
+        return !cacheHit(key);
+    }
+
+    private boolean cacheHit(String key){
+        return cacheMap.containsKey(key);
+    }
+
+    private void updateBasedOnLatestAccess(CacheNode cacheNode){
+        logger.log(Level.INFO, "Updating last accessed time");
+        cacheNode.setLastAccessedTime(System.currentTimeMillis());
+        updateOrderedCacheList(cacheNode.getKey());
     }
 }
