@@ -19,3 +19,13 @@ I'm using Java, and it provides some beautiful built-in implementations of an or
 
 I found a thread-safe implementation of [Deque](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ConcurrentLinkedDeque.html) and will be using it in conjunction with ConcurrentMap.
 <hr style="border: 1px solid gray;">
+
+Implemented a simple LRU cache with usual get/put/remove operations + related tests. 
+Some design choices made include:
+1. Creating a separate cache config class, as this scales it might even be beneficial to provide builder design pattern to incrementally inject custom inputs for various configs
+2. While not specified, both the put() and remove() return the previous value associated with the key, in line with [map behaviour](https://docs.oracle.com/javase/8/docs/api/java/util/Map.html#put-K-V-)
+3. Maintainable, extensible codebase: Separate classes for utils and constants. Access modifiers as and where applicabel
+4. Error and exception handling: Check for null/invalid values as and where applicable, throwing exceptions where deemed fit
+
+Next challenge will be to implement ttl-based expiry, sync/async loading, writes & refreshes.
+<hr style="border: 1px solid gray;">

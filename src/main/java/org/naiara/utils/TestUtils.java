@@ -1,7 +1,7 @@
-package org.naiara;
+package org.naiara.utils;
 
 public class TestUtils {
-    static void passTest(){
+    public static void passTest(){
         System.out.println("Test Passed!");
     }
 }

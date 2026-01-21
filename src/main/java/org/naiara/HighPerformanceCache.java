@@ -32,11 +32,8 @@ public class HighPerformanceCache {
      */
     public String get(String key) {
         checkForNullValue(key);
-        if (!cacheMap.containsKey(key)) {
-            return fetchFromStore(key);
-        }
-        orderedCacheList.remove(key);
-        orderedCacheList.addFirst(key);
+        if (!cacheMap.containsKey(key)) return fetchFromStore(key);
+        updateOrderedCacheList(key);
         return cacheMap.get(key);
     }
 
@@ -46,24 +43,25 @@ public class HighPerformanceCache {
     cache is at capacity, evict the least recently used item before
     adding the new item.
      */
-    public void put(String key, String value) {
+    public String put(String key, String value) {
         checkForNullValue(key);
         checkForNullValue(value);
         if (isCacheFull()) evictLru();
+        String previousValue = cacheMap.getOrDefault(key, null);
         cacheMap.put(key, value);
         updateOrderedCacheList(key);
+        return previousValue;
     }
 
     /*
     remove(key): Remove the key-value pair associated with the given
     key from the cache.
      */
-    public boolean remove(String key) {
+    public String remove(String key) {
         checkForNullValue(key);
-        if (!cacheMap.containsKey(key)) return false;
+        if (!cacheMap.containsKey(key)) return null;
         orderedCacheList.remove(key);
-        cacheMap.remove(key);
-        return true;
+        return cacheMap.remove(key);
     }
 
     private void checkForNullValue(String elememt){

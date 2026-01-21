@@ -2,8 +2,8 @@ package org.naiara;
 
 import org.naiara.cacheconfig.CacheConfig;
 
-import static org.naiara.TestUtils.passTest;
-import static org.naiara.utils.Constants.DEAFULT_CACHE_SIZE;
+import static org.naiara.utils.Constants.*;
+import static org.naiara.utils.TestUtils.passTest;
 
 public class HighPerformanceCacheTest {
 
@@ -28,11 +28,9 @@ public class HighPerformanceCacheTest {
           Expected Output: 'value1'
          */
         HighPerformanceCache hpcTest1 = new HighPerformanceCache(cacheConfigTest, null);
-        String key1 = "key1";
-        String inputValue = "value1";
-        hpcTest1.put(key1, inputValue);
-        String test1Result = hpcTest1.get(key1);
-        assert test1Result.equals(inputValue) : "Expected 'value1', got " + test1Result;
+        hpcTest1.put(KEY1, VALUE1);
+        String test1Result = hpcTest1.get(KEY1);
+        assert test1Result.equals(VALUE1) : "Expected 'value1', got " + test1Result;
         passTest();
     }
 
@@ -43,7 +41,7 @@ public class HighPerformanceCacheTest {
             Expected Output: Retrieve from backing store or null if not found
          */
         HighPerformanceCache hpcTest2 = new HighPerformanceCache(cacheConfigTest, null);
-        String test2Result = hpcTest2.get("keyX");
+        String test2Result = hpcTest2.get(KEY2);
         assert test2Result == null : "Expected null, got " + test2Result;
         passTest();
     }
@@ -57,9 +55,10 @@ public class HighPerformanceCacheTest {
              Expected Output: 'value2'
          */
         HighPerformanceCache hpcTest3 = new HighPerformanceCache(cacheConfigTest, null);
-        hpcTest3.put("key1", "value1");
-        hpcTest3.put("key1", "value2");
-        String test3Result = hpcTest3.get("key1");
+        hpcTest3.put(KEY1, VALUE1);
+        String previousValue = hpcTest3.put(KEY1, "value2");
+        String test3Result = hpcTest3.get(KEY1);
+        assert previousValue.equals(VALUE1) : "Expected 'value1', got " + previousValue;
         assert test3Result.equals("value2") : "Expected 'value2', got " + test3Result;
         assert hpcTest3.size() == 1 : "Expected size 1, got " + hpcTest3.size();
         passTest();
@@ -74,10 +73,10 @@ public class HighPerformanceCacheTest {
             Expected Output: Retrieve from backing store or null if not found
          */
         HighPerformanceCache hpcTest4 = new HighPerformanceCache(cacheConfigTest, null);
-        hpcTest4.put("key1", "value1");
-        boolean removed = hpcTest4.remove("key1");
-        String test4Result = hpcTest4.get("key1");
-        assert removed : "Remove should return true";
+        hpcTest4.put(KEY1, VALUE1);
+        String removed = hpcTest4.remove(KEY1);
+        String test4Result = hpcTest4.get(KEY1);
+        assert removed.equals(VALUE1) : "Remove should return true";
         assert test4Result == null : "Expected null after removal";
         assert hpcTest4.size() == 0 : "Expected size 0, got " + hpcTest4.size();
         passTest();
@@ -94,13 +93,13 @@ public class HighPerformanceCacheTest {
                 Expected Output: null (or retrieved from backing store if applicable), 'key1' should be evicted
              */
         HighPerformanceCache hpcTest5 = new HighPerformanceCache(new CacheConfig(2), null);
-        hpcTest5.put("key1", "value1");
-        hpcTest5.put("key2", "value2");
-        hpcTest5.put("key3", "value3");
-        String test5Result = hpcTest5.get("key1");
-        assert hpcTest5.get("key1") == null : "key1 should be evicted";
-        assert hpcTest5.get("key2") != null : "key2 should exist";
-        assert hpcTest5.get("key3") != null : "key3 should exist";
+        hpcTest5.put(KEY1, VALUE1);
+        hpcTest5.put(KEY2, VALUE2);
+        hpcTest5.put(KEY3, VALUE3);
+        String test5Result = hpcTest5.get(KEY1);
+        assert hpcTest5.get(KEY1) == null : "key1 should be evicted";
+        assert hpcTest5.get(KEY2) != null : "key2 should exist";
+        assert hpcTest5.get(KEY3) != null : "key3 should exist";
         assert hpcTest5.size() == 2 : "Expected size 2, got " + hpcTest5.size();
         passTest();
     }
