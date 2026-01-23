@@ -1,5 +1,18 @@
 package org.naiara;
 
+/*
+----------------------------------------------------------------------------
+***************************************************************************
+----------------------------------------------------------------------------
+
+***************          TO BE DELETED! THIS WAS V1.   ********************
+***************    PLEASE REFER TO GENERIC CACHE CLASS     ****************
+
+----------------------------------------------------------------------------
+***************************************************************************
+----------------------------------------------------------------------------
+ */
+
 import org.naiara.cache.CacheConfig;
 import org.naiara.cache.CacheNode;
 import org.naiara.cache.ExpiryStrategy;
@@ -10,11 +23,24 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static org.naiara.utils.Constants.DEAFULT_CACHE_SIZE;
 import static org.naiara.utils.Constants.NULL_INPUT_EXCEPTION;
-import static org.naiara.utils.TestUtils.triggerSleep;
+
+
+/*
+----------------------------------------------------------------------------
+***************************************************************************
+----------------------------------------------------------------------------
+
+***************          TO BE DELETED! THIS WAS V1.   ********************
+***************    PLEASE REFER TO GENERIC CACHE CLASS     ****************
+
+----------------------------------------------------------------------------
+***************************************************************************
+----------------------------------------------------------------------------
+ */
+
 
 public class HighPerformanceCache {
 

@@ -1,5 +1,6 @@
 package org.naiara;
 
+import org.junit.jupiter.api.Test;
 import org.naiara.cache.CacheConfig;
 import org.naiara.store.DummyStore;
 import org.naiara.store.Store;
@@ -7,42 +8,29 @@ import org.naiara.store.StoreNode;
 import java.util.Map;
 
 import static org.naiara.utils.Constants.*;
-import static org.naiara.utils.TestUtils.passTest;
 
 public class HighPerformanceCacheTest {
 
     //TODO: add both happy path tests and others
 
-    private static final CacheConfig cacheConfigTest = new CacheConfig(DEAFULT_CACHE_SIZE);
+    public final CacheConfig cacheConfigTest = new CacheConfig(DEAFULT_CACHE_SIZE);
 
-    static void main() {
+//    TODO: Tests
+//
+//        Order test:
+//        { add some keys,
+//        access first-inserted to make it at first-pointer
+//        add more keys to evict 2nd added/3rd addded}
+//
+//        Edge cases:
+//         - null key
+//         - null value
+//         - ops on empty cache
+//         - clear cache
+//         */
 
-        testAddAndRetrieve();
-        testRetrieveNonExistentKey();
-        testUpdateExistingKey();
-        testRemoveKey();
-        testCapacityAndEvictionPolicy();
-
-        //extra tests
-        testLoadFromStoreOnCacheMiss();
-
-        /*
-        TODO: Tests
-
-        Order test:
-        { add some keys,
-        access first-inserted to make it at first-pointer
-        add more keys to evict 2nd added/3rd addded}
-
-        Edge cases:
-         - null key
-         - null value
-         - ops on empty cache
-         - clear cache
-         */
-    }
-
-    private static void testAddAndRetrieve(){
+    @Test
+    public void testAddAndRetrieve(){
         /*
         Test Case 1: Add and Retrieve
          Input:-> put('key1', 'value1')
@@ -53,10 +41,10 @@ public class HighPerformanceCacheTest {
         hpcTest1.put(KEY1, VALUE1);
         String test1Result = hpcTest1.get(KEY1);
         assert test1Result.equals(VALUE1) : "Expected 'value1', got " + test1Result;
-        passTest();
     }
 
-    private static void testRetrieveNonExistentKey(){
+    @Test
+    public void testRetrieveNonExistentKey(){
         /*
         Test Case 2: Retrieve Non-existent Key
             Input:-> get('keyX') (where 'keyX' is not in cache)
@@ -65,10 +53,10 @@ public class HighPerformanceCacheTest {
         HighPerformanceCache hpcTest2 = new HighPerformanceCache(cacheConfigTest, null);
         String test2Result = hpcTest2.get(KEY2);
         assert test2Result == null : "Expected null, got " + test2Result;
-        passTest();
     }
 
-    private static void testUpdateExistingKey(){
+    @Test
+    public void testUpdateExistingKey(){
         /*
         Test Case 3: Update Existing Key
             Input:-> put('key1', 'value1')
@@ -83,10 +71,10 @@ public class HighPerformanceCacheTest {
         assert previousValue.equals(VALUE1) : "Expected 'value1', got " + previousValue;
         assert test3Result.equals("value2") : "Expected 'value2', got " + test3Result;
         assert hpcTest3.size() == 1 : "Expected size 1, got " + hpcTest3.size();
-        passTest();
     }
 
-    private static void testRemoveKey(){
+    @Test
+    public void testRemoveKey(){
         /*
         Test Case 4: Remove Key
             Input:-> put('key1', 'value1'),
@@ -101,10 +89,10 @@ public class HighPerformanceCacheTest {
         assert removed.equals(VALUE1) : "Remove should return previous value (value1) got: " + removed;
         assert test4Result == null : "Expected null after removal";
         assert hpcTest4.size() == 0 : "Expected size 0, got " + hpcTest4.size();
-        passTest();
     }
 
-    private static void testCapacityAndEvictionPolicy(){
+    @Test
+    public void testCapacityAndEvictionPolicy(){
             /*
             Test Case 5: Evict on Capacity
                 Setup: Cache capacity set to 2
@@ -122,11 +110,11 @@ public class HighPerformanceCacheTest {
         assert hpcTest5.get(KEY2) != null : "key2 should exist";
         assert hpcTest5.get(KEY3) != null : "key3 should exist";
         assert hpcTest5.size() == 2 : "Expected size 2, got " + hpcTest5.size();
-        passTest();
     }
 
     // Extra tests, not in provided PDF
-    private static void testLoadFromStoreOnCacheMiss() {
+    @Test
+    public void testLoadFromStoreOnCacheMiss() {
         Store cacheLoaderTest = new DummyStore(Map.of(BACKEND_KEY, new StoreNode(BACKEND_KEY, BACKEND_VALUE)));
         HighPerformanceCache hpcTest6 = new HighPerformanceCache(cacheConfigTest, cacheLoaderTest);
         String hpcTest6Result = hpcTest6.get(BACKEND_KEY);
@@ -134,6 +122,5 @@ public class HighPerformanceCacheTest {
         hpcTest6.put(BACKEND_KEY, VALUE3);
         hpcTest6Result = hpcTest6.get(BACKEND_KEY);
         assert hpcTest6Result != null && hpcTest6Result.equals(VALUE3) : "Should retrieve updated value from cache: " + VALUE3 + ", instead got previous backend value "+ hpcTest6Result;
-        passTest();
     }
 }

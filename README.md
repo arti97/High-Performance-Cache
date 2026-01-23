@@ -1,12 +1,17 @@
 # High-performance-Cache
 PhonePe Interview | Machine Coding round
 
+**PhonePe Assessor PLEASE NOTE**: [This](https://github.com/arti97/High-Performance-Cache/tree/914c9be7359d7e4f0ef95febc51f6a915c9d75cd) was the last commit at the time of submission. 
+I have chosen to improve this further purely out of my own interest in learning Generics and improving this, so feel free to assess this or the above-linked commit
+
+<hr style="border: 1px solid gray;">
+
 Documenting all decisions/thoughts here.
 
 First, since the description of put(key, value) says '...If the cache is at capacity, evict the *least recently used* item...', this is clearly supposed to be an LRU cache.
 
 So now the question is which data structure to use?
-Array/ArrayList is the first data structure that comes to minf, but any get/put op will be O(n) time/space complexity.
+Array/ArrayList is the first data structure that comes to mind, but any get/put op will be O(n) time/space complexity.
 Can we do better?
 
 Hashmaps are the next obvious answer -> which reduces our get/put time to O(1), but then tracking LRU will be O(n). 
@@ -17,7 +22,7 @@ We need something to track BOTH LRU and MRU...a list can be used in combination 
 I'm using Java, and it provides some beautiful built-in implementations of an ordered map and a DLL, however they are not thread safe
 (References: [LinkedHashMap](https://docs.oracle.com/javase/8/docs/api/java/util/LinkedHashMap.html), [ArrayDeque](https://docs.oracle.com/javase/8/docs/api/java/util/ArrayDeque.html))
 
-I found a thread-safe implementation of [Deque](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ConcurrentLinkedDeque.html) and will be using it in conjunction with ConcurrentMap.
+I found a thread-safe implementation of [Deque](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ConcurrentLinkedDeque.html) and will be using it in conjunction with [ConcurrentMap](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ConcurrentMap.html).
 <hr style="border: 1px solid gray;">
 
 Implemented a simple LRU cache with usual get/put/remove operations + related tests. 
@@ -28,4 +33,17 @@ Some design choices made include:
 4. Error and exception handling: Check for null/invalid values as and where applicable, throwing exceptions where deemed fit
 
 Next challenge will be to implement ttl-based expiry, sync/async loading, writes & refreshes.
+<hr style="border: 1px solid gray;">
+
+23/01/2026: Improvements:
+
+1. Java Generics based cache
+2. Strategy Pattern for ttl-based expiries
+3. Auto-scheduled ttl-based expiry run to trigger periodically post object instantiation
+4. Builder pattern to create cacheNodes from storeNodes
+5. Async cache load from store on instantiation 
+6. JUnit tests
+
+Next, implement write strategies (async write-back or sync write-through) and refresh strategies (periodic async refresh from store and/or periodic async refresh to store)
+
 <hr style="border: 1px solid gray;">
